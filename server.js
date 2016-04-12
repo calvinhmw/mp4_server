@@ -67,19 +67,20 @@ usersRoute.get(function (req, res) {
     res.send(req.query);
 });
 usersRoute.post(function (req, res) {
+    console.log(req.body);
     User.create({name: req.body.name, email: req.body.email, pendingTasks: []},
         function (err, user) {
             if (err) {
                 var errorMsg;
                 if (err.name == "ValidationError") {
-                    if(err.errors.name && err.errors.email) {
+                    if (err.errors.name && err.errors.email) {
                         errorMsg = "Validation Error: A name is required! An email is required! ";
-                    }else if(err.errors.name) {
+                    } else if (err.errors.name) {
                         errorMsg = "Validation Error: A name is required! ";
-                    }else if(err.errors.email){
+                    } else if (err.errors.email) {
                         errorMsg = "Validation Error: An email is required! ";
                     }
-                }else if(err.code == 11000) {
+                } else if (err.code == 11000) {
                     errorMsg = "This email already exists";
                 }
                 res.status(500).json({message: errorMsg, data: []});
@@ -89,6 +90,12 @@ usersRoute.post(function (req, res) {
         }
     );
 });
+
+usersRoute.options(function (req, res) {
+    res.writeHead(200);
+    res.end();
+});
+
 
 // Start the server
 app.listen(port);
