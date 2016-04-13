@@ -62,19 +62,73 @@ var userRoute = router.route('/users/:user_id');
 var tasksRoute = router.route('/tasks');
 var taskRoute = router.route('/tasks/:task_id');
 
-usersRoute.get(function (req, res) {
-    User.find(function (err, users) {
-        if (err) {
-            res.status(500).json({message: err.errors, data: []});
-        } else {
-            res.status(200).json({message: "OK", data: users});
+var parseUserError = function (err) {
+    var errorMsg;
+    if (err.name == "ValidationError") {
+        if (err.errors.name && err.errors.email) {
+            errorMsg = "Validation Error: A name is required! An email is required! ";
+        } else if (err.errors.name) {
+            errorMsg = "Validation Error: A name is required! ";
+        } else if (err.errors.email) {
+            errorMsg = "Validation Error: An email is required! ";
         }
-    });
+    } else if (err.code == 11000) {
+        errorMsg = "This email already exists";
+    }
+    return errorMsg;
+};
+
+var parseTaskError = function (err) {
+    var nameErr = "";
+    var deadlineErr = "";
+    var errorMsg = "";
+    if (err.name == "ValidationError") {
+        if (err.errors.name) {
+            if (err.errors.name.kind == "required") {
+                nameErr = " A name is required! ";
+            } else {
+                nameErr = err.errors.name.message;
+            }
+        }
+        if (err.errors.deadline) {
+            if (err.errors.deadline.kind == "required") {
+                deadlineErr = " A deadline is required! ";
+            } else {
+                deadlineErr = err.errors.deadline.message;
+            }
+        }
+        errorMsg = "Validation error: " + nameErr + deadlineErr;
+    } else {
+        errorMsg = err.name;
+    }
+    return errorMsg;
+};
+
+usersRoute.get(function (req, res) {
     var where = eval("(" + req.query.where + ")");
-    console.log(req.query.where);
-    console.log(where);
-    req.query.where = where;
-    //res.send(req.query);
+    var sort = eval("(" + req.query.sort + ")");
+    var select = eval("(" + req.query.select + ")");
+    var skip = eval("(" + req.query.skip + ")");
+    var limit = eval("(" + req.query.limit + ")");
+    var count = eval("(" + req.query.count + ")");
+    var document = User.find(where);
+    if(count){
+        document.count(function(err, count){
+            if(err) {
+                res.status(500).json({message: err.errors, data: []});
+            }else{
+                res.status(200).json({message: "OK", data: count});
+            }
+        });
+    }else{
+        document.sort(sort).skip(skip).limit(limit).select(select).exec(function(err, users) {
+            if(err) {
+                res.status(500).json({message: err.errors, data: []});
+            }else{
+                res.status(200).json({message: "OK", data: users});
+            }
+        });
+    }
 });
 
 usersRoute.post(function (req, res) {
@@ -82,19 +136,7 @@ usersRoute.post(function (req, res) {
     user.save().then(function (product) {
         res.status(201).json({message: "User added", data: user});
     }, function (err) {
-        var errorMsg;
-        if (err.name == "ValidationError") {
-            if (err.errors.name && err.errors.email) {
-                errorMsg = "Validation Error: A name is required! An email is required! ";
-            } else if (err.errors.name) {
-                errorMsg = "Validation Error: A name is required! ";
-            } else if (err.errors.email) {
-                errorMsg = "Validation Error: An email is required! ";
-            }
-        } else if (err.code == 11000) {
-            errorMsg = "This email already exists";
-        }
-        res.status(500).json({message: errorMsg, data: []});
+        res.status(500).json({message: parseUserError(err), data: []});
     });
 });
 
@@ -112,46 +154,77 @@ userRoute.put(function (req, res) {
     var pendingTasks = req.body.pendingTasks;
     User.findByIdAndUpdate(req.params.user_id,
         {name: name, email: email, pendingTasks: pendingTasks},
-        {new: true},
+        {new: true, runValidators: true},
         function (err, user) {
             if (err) {
-                res.status(500).json({message: err, data: []});
+                if (err.kind == "ObjectId") {
+                    res.status(404).json({message: "User not found", data: []});
+                } else {
+                    res.status(500).json({message: parseUserError(err), data: []});
+                }
             } else if (!user) {
                 res.status(404).json({message: "User not found", data: []});
             } else {
-                res.status(200).json({message: "OK", data: user});
+                res.status(200).json({message: "User updated", data: user});
             }
         });
-    //
-    //User.findById(req.params.user_id).then(function(user){
-    //
-    //    user.name = req.body.name;
-    //    user.email = req.body.email;
-    //    user.pendingTasks = req.body.pendingTasks;
-    //    return user.save();
-    //}).then(function(product){
-    //    res.status(200).json({message: "OK", data: product});
-    //},function(err){
-    //
-    //    res.status(500).json({message: err, data: []});
-    //
-    //
-    //
-    //});
+});
+
+userRoute.delete(function (req, res) {
+    User.findByIdAndRemove(req.params.user_id,
+        function (err, user) {
+            if (err) {
+                if (err.kind == "ObjectId") {
+                    res.status(404).json({message: "User not found", data: []});
+                }
+            } else if (!user) {
+                res.status(404).json({message: "User not found", data: []});
+            } else {
+                res.status(200).json({message: "User deleted", data: user});
+            }
+        });
 });
 
 
 tasksRoute.get(function (req, res) {
-    Task.find(function (err, tasks) {
-        if (err) {
-            res.status(500).json({message: err.errors, data: []});
-        } else {
-            res.status(200).json({message: "OK", data: tasks});
-        }
-    });
+    //Task.find(function (err, tasks) {
+    //    if (err) {
+    //        res.status(500).json({message: err.errors, data: []});
+    //    } else {
+    //        res.status(200).json({message: "OK", data: tasks});
+    //    }
+    //});
+    //var where = eval("(" + req.query.where + ")");
+    //console.log(req.query.where);
+    //console.log(where);
+
     var where = eval("(" + req.query.where + ")");
-    console.log(req.query.where);
-    console.log(where);
+    var sort = eval("(" + req.query.sort + ")");
+    var select = eval("(" + req.query.select + ")");
+    var skip = eval("(" + req.query.skip + ")");
+    var limit = eval("(" + req.query.limit + ")");
+    var count = eval("(" + req.query.count + ")");
+    var document = Task.find(where);
+    if(count){
+        document.count(function(err, count){
+            if(err) {
+                res.status(500).json({message: err.errors, data: []});
+            }else{
+                res.status(200).json({message: "OK", data: count});
+            }
+        });
+    }else{
+        document.sort(sort).skip(skip).limit(limit).select(select).exec(function(err, tasks) {
+            if(err) {
+                res.status(500).json({message: err.errors, data: []});
+            }else{
+                res.status(200).json({message: "OK", data: tasks});
+            }
+        });
+    }
+
+
+
 });
 
 
@@ -162,37 +235,68 @@ tasksRoute.post(function (req, res) {
         description: req.body.description,
         deadline: req.body.deadline,
         completed: false,
-        assignedUser: req.body.assignedUser != undefined ? req.body.assignedUser : "",
-        assignedUserName: req.body.assignedUserName != undefined ? req.body.assignedUserName : "unassigned"
+        //assignedUser: req.body.assignedUser != undefined ? req.body.assignedUser : "",
+        //assignedUserName: req.body.assignedUserName != undefined ? req.body.assignedUserName : "unassigned",
+        assignedUser: req.body.assignedUser,
+        assignedUserName: req.body.assignedUserName
     });
 
     task.save().then(function (product) {
         res.status(201).json({message: "Task added", data: product});
     }, function (err) {
-        var nameErr = "";
-        var deadlineErr = "";
-        var errorMsg = "";
-        if (err.name == "ValidationError") {
-            if (err.errors.name) {
-                if (err.errors.name.kind == "required") {
-                    nameErr = " A name is required! ";
-                } else {
-                    nameErr = err.errors.name.message;
-                }
-            }
-            if (err.errors.deadline) {
-                if (err.errors.deadline.kind == "required") {
-                    deadlineErr = " A deadline is required! ";
-                } else {
-                    deadlineErr = err.errors.deadline.message;
-                }
-            }
-            errorMsg = "Validation error: " + nameErr + deadlineErr;
-        } else {
-            errorMsg = err.name;
-        }
-        res.status(500).json({message: errorMsg, data: []});
+        res.status(500).json({message: parseTaskError(err), data: []});
     });
+});
+
+
+taskRoute.get(function (req, res) {
+    Task.findById(req.params.task_id).then(function (product) {
+        res.status(200).json({message: "OK", data: product});
+    }, function (err) {
+        res.status(404).json({message: "Task not found", data: []});
+    });
+});
+
+taskRoute.put(function (req, res) {
+    var task = {
+        name: req.body.name,
+        description: req.body.description,
+        deadline: req.body.deadline,
+        completed: req.body.completed,
+        assignedUserName: req.body.assignedUserName
+    };
+
+    Task.findByIdAndUpdate(req.params.task_id,
+        task,
+        {new: true, runValidators: true},
+        function (err, newTask) {
+            if (err) {
+                if (err.kind == "ObjectId") {
+                    res.status(404).json({message: "Task not found", data: []});
+                } else {
+                    res.status(500).json({message: parseTaskError(err), data: []});
+                }
+            } else if (!newTask) {
+                res.status(404).json({message: "Task not found", data: []});
+            } else {
+                res.status(200).json({message: "Task updated", data: newTask});
+            }
+        });
+});
+
+taskRoute.delete(function (req, res) {
+    Task.findByIdAndRemove(req.params.task_id,
+        function (err, task) {
+            if (err) {
+                if (err.kind == "ObjectId") {
+                    res.status(404).json({message: "Task not found", data: []});
+                }
+            } else if (!task) {
+                res.status(404).json({message: "Task not found", data: []});
+            } else {
+                res.status(200).json({message: "Task deleted", data: task});
+            }
+        });
 });
 
 
@@ -204,14 +308,14 @@ tasksRoute.options(function (req, res) {
     res.writeHead(200);
     res.end();
 });
-userRoute.options(function (req, res) {
-    res.writeHead(200);
-    res.end();
-});
-taskRoute.options(function (req, res) {
-    res.writeHead(200);
-    res.end();
-});
+//userRoute.options(function (req, res) {
+//    res.writeHead(200);
+//    res.end();
+//});
+//taskRoute.options(function (req, res) {
+//    res.writeHead(200);
+//    res.end();
+//});
 
 
 // Start the server
