@@ -79,9 +79,9 @@ usersRoute.get(function (req, res) {
 
 usersRoute.post(function (req, res) {
     var user = new User(req.body);
-    user.save().then(function(product){
+    user.save().then(function (product) {
         res.status(201).json({message: "User added", data: user});
-    },function(err){
+    }, function (err) {
         var errorMsg;
         if (err.name == "ValidationError") {
             if (err.errors.name && err.errors.email) {
@@ -96,33 +96,48 @@ usersRoute.post(function (req, res) {
         }
         res.status(500).json({message: errorMsg, data: []});
     });
-
-
-    //User.create(req.body, function (err, user) {
-    //        if (err) {
-    //            var errorMsg;
-    //            if (err.name == "ValidationError") {
-    //                if (err.errors.name && err.errors.email) {
-    //                    errorMsg = "Validation Error: A name is required! An email is required! ";
-    //                } else if (err.errors.name) {
-    //                    errorMsg = "Validation Error: A name is required! ";
-    //                } else if (err.errors.email) {
-    //                    errorMsg = "Validation Error: An email is required! ";
-    //                }
-    //            } else if (err.code == 11000) {
-    //                errorMsg = "This email already exists";
-    //            }
-    //            res.status(500).json({message: errorMsg, data: []});
-    //        } else {
-    //            res.status(201).json({message: "User added", data: user});
-    //        }
-    //    }
-    //);
 });
 
-usersRoute.options(function (req, res) {
-    res.writeHead(200);
-    res.end();
+userRoute.get(function (req, res) {
+    User.findById(req.params.user_id).then(function (product) {
+        res.status(200).json({message: "OK", data: product});
+    }, function (err) {
+        res.status(404).json({message: "User not found", data: []});
+    });
+});
+
+userRoute.put(function (req, res) {
+    var name = req.body.name;
+    var email = req.body.email;
+    var pendingTasks = req.body.pendingTasks;
+    User.findByIdAndUpdate(req.params.user_id,
+        {name: name, email: email, pendingTasks: pendingTasks},
+        {new: true},
+        function (err, user) {
+            if (err) {
+                res.status(500).json({message: err, data: []});
+            } else if (!user) {
+                res.status(404).json({message: "User not found", data: []});
+            } else {
+                res.status(200).json({message: "OK", data: user});
+            }
+        });
+    //
+    //User.findById(req.params.user_id).then(function(user){
+    //
+    //    user.name = req.body.name;
+    //    user.email = req.body.email;
+    //    user.pendingTasks = req.body.pendingTasks;
+    //    return user.save();
+    //}).then(function(product){
+    //    res.status(200).json({message: "OK", data: product});
+    //},function(err){
+    //
+    //    res.status(500).json({message: err, data: []});
+    //
+    //
+    //
+    //});
 });
 
 
@@ -161,23 +176,41 @@ tasksRoute.post(function (req, res) {
             if (err.errors.name) {
                 if (err.errors.name.kind == "required") {
                     nameErr = " A name is required! ";
-                }else{
+                } else {
                     nameErr = err.errors.name.message;
                 }
             }
             if (err.errors.deadline) {
                 if (err.errors.deadline.kind == "required") {
                     deadlineErr = " A deadline is required! ";
-                }else{
+                } else {
                     deadlineErr = err.errors.deadline.message;
                 }
             }
-            errorMsg = "Validation error: "+nameErr+deadlineErr;
+            errorMsg = "Validation error: " + nameErr + deadlineErr;
         } else {
             errorMsg = err.name;
         }
         res.status(500).json({message: errorMsg, data: []});
     });
+});
+
+
+usersRoute.options(function (req, res) {
+    res.writeHead(200);
+    res.end();
+});
+tasksRoute.options(function (req, res) {
+    res.writeHead(200);
+    res.end();
+});
+userRoute.options(function (req, res) {
+    res.writeHead(200);
+    res.end();
+});
+taskRoute.options(function (req, res) {
+    res.writeHead(200);
+    res.end();
 });
 
 
