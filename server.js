@@ -63,37 +63,121 @@ var tasksRoute = router.route('/tasks');
 var taskRoute = router.route('/tasks/:task_id');
 
 usersRoute.get(function (req, res) {
-    console.log(req.query);
-    res.send(req.query);
-});
-usersRoute.post(function (req, res) {
-    console.log(req.body);
-    User.create({name: req.body.name, email: req.body.email, pendingTasks: []},
-        function (err, user) {
-            if (err) {
-                var errorMsg;
-                if (err.name == "ValidationError") {
-                    if (err.errors.name && err.errors.email) {
-                        errorMsg = "Validation Error: A name is required! An email is required! ";
-                    } else if (err.errors.name) {
-                        errorMsg = "Validation Error: A name is required! ";
-                    } else if (err.errors.email) {
-                        errorMsg = "Validation Error: An email is required! ";
-                    }
-                } else if (err.code == 11000) {
-                    errorMsg = "This email already exists";
-                }
-                res.status(500).json({message: errorMsg, data: []});
-            } else {
-                res.status(201).json({message: "User added", data: user});
-            }
+    User.find(function (err, users) {
+        if (err) {
+            res.status(500).json({message: err.errors, data: []});
+        } else {
+            res.status(200).json({message: "OK", data: users});
         }
-    );
+    });
+    var where = eval("(" + req.query.where + ")");
+    console.log(req.query.where);
+    console.log(where);
+    req.query.where = where;
+    //res.send(req.query);
+});
+
+usersRoute.post(function (req, res) {
+    var user = new User(req.body);
+    user.save().then(function(product){
+        res.status(201).json({message: "User added", data: user});
+    },function(err){
+        var errorMsg;
+        if (err.name == "ValidationError") {
+            if (err.errors.name && err.errors.email) {
+                errorMsg = "Validation Error: A name is required! An email is required! ";
+            } else if (err.errors.name) {
+                errorMsg = "Validation Error: A name is required! ";
+            } else if (err.errors.email) {
+                errorMsg = "Validation Error: An email is required! ";
+            }
+        } else if (err.code == 11000) {
+            errorMsg = "This email already exists";
+        }
+        res.status(500).json({message: errorMsg, data: []});
+    });
+
+
+    //User.create(req.body, function (err, user) {
+    //        if (err) {
+    //            var errorMsg;
+    //            if (err.name == "ValidationError") {
+    //                if (err.errors.name && err.errors.email) {
+    //                    errorMsg = "Validation Error: A name is required! An email is required! ";
+    //                } else if (err.errors.name) {
+    //                    errorMsg = "Validation Error: A name is required! ";
+    //                } else if (err.errors.email) {
+    //                    errorMsg = "Validation Error: An email is required! ";
+    //                }
+    //            } else if (err.code == 11000) {
+    //                errorMsg = "This email already exists";
+    //            }
+    //            res.status(500).json({message: errorMsg, data: []});
+    //        } else {
+    //            res.status(201).json({message: "User added", data: user});
+    //        }
+    //    }
+    //);
 });
 
 usersRoute.options(function (req, res) {
     res.writeHead(200);
     res.end();
+});
+
+
+tasksRoute.get(function (req, res) {
+    Task.find(function (err, tasks) {
+        if (err) {
+            res.status(500).json({message: err.errors, data: []});
+        } else {
+            res.status(200).json({message: "OK", data: tasks});
+        }
+    });
+    var where = eval("(" + req.query.where + ")");
+    console.log(req.query.where);
+    console.log(where);
+});
+
+
+tasksRoute.post(function (req, res) {
+    //console.log(req.body);
+    var task = new Task({
+        name: req.body.name,
+        description: req.body.description,
+        deadline: req.body.deadline,
+        completed: false,
+        assignedUser: req.body.assignedUser != undefined ? req.body.assignedUser : "",
+        assignedUserName: req.body.assignedUserName != undefined ? req.body.assignedUserName : "unassigned"
+    });
+
+    task.save().then(function (product) {
+        res.status(201).json({message: "Task added", data: product});
+    }, function (err) {
+        var nameErr = "";
+        var deadlineErr = "";
+        var errorMsg = "";
+        if (err.name == "ValidationError") {
+            if (err.errors.name) {
+                if (err.errors.name.kind == "required") {
+                    nameErr = " A name is required! ";
+                }else{
+                    nameErr = err.errors.name.message;
+                }
+            }
+            if (err.errors.deadline) {
+                if (err.errors.deadline.kind == "required") {
+                    deadlineErr = " A deadline is required! ";
+                }else{
+                    deadlineErr = err.errors.deadline.message;
+                }
+            }
+            errorMsg = "Validation error: "+nameErr+deadlineErr;
+        } else {
+            errorMsg = err.name;
+        }
+        res.status(500).json({message: errorMsg, data: []});
+    });
 });
 
 
