@@ -27,6 +27,7 @@ var port = process.env.PORT || 4000;
 //Allow CORS so that backend and frontend could pe put on different servers
 var allowCrossDomain = function (req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
     res.header("Access-Control-Allow-Headers", "X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept");
     next();
 };
@@ -117,19 +118,19 @@ usersRoute.get(function (req, res) {
     var limit = eval("(" + req.query.limit + ")");
     var count = eval("(" + req.query.count + ")");
     var document = User.find(where);
-    if(count){
-        document.count(function(err, count){
-            if(err) {
+    if (count) {
+        document.count(function (err, count) {
+            if (err) {
                 res.status(500).json({message: err.errors, data: []});
-            }else{
+            } else {
                 res.status(200).json({message: "OK", data: count});
             }
         });
-    }else{
-        document.sort(sort).skip(skip).limit(limit).select(select).exec(function(err, users) {
-            if(err) {
+    } else {
+        document.sort(sort).skip(skip).limit(limit).select(select).exec(function (err, users) {
+            if (err) {
                 res.status(500).json({message: err.errors, data: []});
-            }else{
+            } else {
                 res.status(200).json({message: "OK", data: users});
             }
         });
@@ -153,21 +154,24 @@ userRoute.get(function (req, res) {
     //    res.status(404).json({message: "User not found", data: []});
     //});
 
-    User.findById(req.params.user_id, function(err, user){
-        if(err || !user){
+    User.findById(req.params.user_id, function (err, user) {
+        if (err || !user) {
             res.status(404).json({message: "User not found", data: []});
-        }else{
+        } else {
             res.status(200).json({message: "OK", data: user});
         }
     });
 });
 
 userRoute.put(function (req, res) {
-    var name = req.body.name;
-    var email = req.body.email;
-    var pendingTasks = req.body.pendingTasks;
+
+    //var name = req.body.name;
+    //var email = req.body.email;
+    //var pendingTasks = req.body.pendingTasks;
+
     User.findByIdAndUpdate(req.params.user_id,
-        {name: name, email: email, pendingTasks: pendingTasks},
+        {$set: req.body},
+        //{name: name, email: email, pendingTasks: pendingTasks},
         {new: true, runValidators: true},
         function (err, user) {
             if (err) {
@@ -187,9 +191,9 @@ userRoute.put(function (req, res) {
 userRoute.delete(function (req, res) {
     User.findByIdAndRemove(req.params.user_id,
         function (err, user) {
-            if(err || !user){
+            if (err || !user) {
                 res.status(404).json({message: "User not found", data: []});
-            }else{
+            } else {
                 res.status(200).json({message: "User deleted", data: user});
             }
         });
@@ -204,19 +208,19 @@ tasksRoute.get(function (req, res) {
     var limit = eval("(" + req.query.limit + ")");
     var count = eval("(" + req.query.count + ")");
     var document = Task.find(where);
-    if(count){
-        document.count(function(err, count){
-            if(err) {
+    if (count) {
+        document.count(function (err, count) {
+            if (err) {
                 res.status(500).json({message: err.errors, data: []});
-            }else{
+            } else {
                 res.status(200).json({message: "OK", data: count});
             }
         });
-    }else{
-        document.sort(sort).skip(skip).limit(limit).select(select).exec(function(err, tasks) {
-            if(err) {
+    } else {
+        document.sort(sort).skip(skip).limit(limit).select(select).exec(function (err, tasks) {
+            if (err) {
                 res.status(500).json({message: err.errors, data: []});
-            }else{
+            } else {
                 res.status(200).json({message: "OK", data: tasks});
             }
         });
@@ -245,32 +249,18 @@ tasksRoute.post(function (req, res) {
 
 
 taskRoute.get(function (req, res) {
-    //Task.findById(req.params.task_id).then(function (product) {
-    //    res.status(200).json({message: "OK", data: product});
-    //}, function (err) {
-    //    res.status(404).json({message: "Task not found", data: []});
-    //});
-
-    Task.findById(req.params.task_id, function(err, task){
-        if(err || !task){
+    Task.findById(req.params.task_id, function (err, task) {
+        if (err || !task) {
             res.status(404).json({message: "Task not found", data: []});
-        }else{
-            res.status(200).json({message: "OK", data: product});
+        } else {
+            res.status(200).json({message: "OK", data: task});
         }
     });
 });
 
 taskRoute.put(function (req, res) {
-    var task = {
-        name: req.body.name,
-        description: req.body.description,
-        deadline: req.body.deadline,
-        completed: req.body.completed,
-        assignedUserName: req.body.assignedUserName
-    };
-
     Task.findByIdAndUpdate(req.params.task_id,
-        task,
+        {$set: req.body},
         {new: true, runValidators: true},
         function (err, newTask) {
             if (err) {
@@ -290,21 +280,11 @@ taskRoute.put(function (req, res) {
 taskRoute.delete(function (req, res) {
     Task.findByIdAndRemove(req.params.task_id,
         function (err, task) {
-            if(err || !task) {
+            if (err || !task) {
                 res.status(404).json({message: "Task not found", data: []});
-            }else{
+            } else {
                 res.status(200).json({message: "Task deleted", data: task});
             }
-
-            //if (err) {
-            //    if (err.kind == "ObjectId") {
-            //        res.status(404).json({message: "Task not found", data: []});
-            //    }
-            //} else if (!task) {
-            //    res.status(404).json({message: "Task not found", data: []});
-            //} else {
-            //    res.status(200).json({message: "Task deleted", data: task});
-            //}
         });
 });
 
@@ -317,14 +297,14 @@ tasksRoute.options(function (req, res) {
     res.writeHead(200);
     res.end();
 });
-//userRoute.options(function (req, res) {
-//    res.writeHead(200);
-//    res.end();
-//});
-//taskRoute.options(function (req, res) {
-//    res.writeHead(200);
-//    res.end();
-//});
+userRoute.options(function (req, res) {
+    res.writeHead(200);
+    res.end();
+});
+taskRoute.options(function (req, res) {
+    res.writeHead(200);
+    res.end();
+});
 
 
 // Start the server
