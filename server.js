@@ -171,7 +171,6 @@ userRoute.put(function (req, res) {
 
     User.findByIdAndUpdate(req.params.user_id,
         {$set: req.body},
-        //{name: name, email: email, pendingTasks: pendingTasks},
         {new: true, runValidators: true},
         function (err, user) {
             if (err) {
@@ -228,18 +227,7 @@ tasksRoute.get(function (req, res) {
 });
 
 tasksRoute.post(function (req, res) {
-    //console.log(req.body);
-    var task = new Task({
-        name: req.body.name,
-        description: req.body.description,
-        deadline: req.body.deadline,
-        completed: false,
-        //assignedUser: req.body.assignedUser != undefined ? req.body.assignedUser : "",
-        //assignedUserName: req.body.assignedUserName != undefined ? req.body.assignedUserName : "unassigned",
-        assignedUser: req.body.assignedUser,
-        assignedUserName: req.body.assignedUserName
-    });
-
+    var task = new Task(req.body);
     task.save().then(function (product) {
         res.status(201).json({message: "Task added", data: product});
     }, function (err) {
