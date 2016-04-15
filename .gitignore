@@ -1,5 +1,7 @@
 .DS_Store
 
+.idea*
+mp4helper*
 .sass-cache/
 node_modules/
 npm-debug.log

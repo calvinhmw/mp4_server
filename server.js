@@ -141,10 +141,18 @@ usersRoute.post(function (req, res) {
 });
 
 userRoute.get(function (req, res) {
-    User.findById(req.params.user_id).then(function (product) {
-        res.status(200).json({message: "OK", data: product});
-    }, function (err) {
-        res.status(404).json({message: "User not found", data: []});
+    //User.findById(req.params.user_id).then(function (product) {
+    //    res.status(200).json({message: "OK", data: product});
+    //}, function (err) {
+    //    res.status(404).json({message: "User not found", data: []});
+    //});
+
+    User.findById(req.params.user_id, function(err, user){
+        if(err || !user){
+            res.status(404).json({message: "User not found", data: []});
+        }else{
+            res.status(200).json({message: "OK", data: user});
+        }
     });
 });
 
@@ -173,13 +181,9 @@ userRoute.put(function (req, res) {
 userRoute.delete(function (req, res) {
     User.findByIdAndRemove(req.params.user_id,
         function (err, user) {
-            if (err) {
-                if (err.kind == "ObjectId") {
-                    res.status(404).json({message: "User not found", data: []});
-                }
-            } else if (!user) {
+            if(err || !user){
                 res.status(404).json({message: "User not found", data: []});
-            } else {
+            }else{
                 res.status(200).json({message: "User deleted", data: user});
             }
         });
@@ -187,17 +191,6 @@ userRoute.delete(function (req, res) {
 
 
 tasksRoute.get(function (req, res) {
-    //Task.find(function (err, tasks) {
-    //    if (err) {
-    //        res.status(500).json({message: err.errors, data: []});
-    //    } else {
-    //        res.status(200).json({message: "OK", data: tasks});
-    //    }
-    //});
-    //var where = eval("(" + req.query.where + ")");
-    //console.log(req.query.where);
-    //console.log(where);
-
     var where = eval("(" + req.query.where + ")");
     var sort = eval("(" + req.query.sort + ")");
     var select = eval("(" + req.query.select + ")");
@@ -222,11 +215,7 @@ tasksRoute.get(function (req, res) {
             }
         });
     }
-
-
-
 });
-
 
 tasksRoute.post(function (req, res) {
     //console.log(req.body);
@@ -250,10 +239,18 @@ tasksRoute.post(function (req, res) {
 
 
 taskRoute.get(function (req, res) {
-    Task.findById(req.params.task_id).then(function (product) {
-        res.status(200).json({message: "OK", data: product});
-    }, function (err) {
-        res.status(404).json({message: "Task not found", data: []});
+    //Task.findById(req.params.task_id).then(function (product) {
+    //    res.status(200).json({message: "OK", data: product});
+    //}, function (err) {
+    //    res.status(404).json({message: "Task not found", data: []});
+    //});
+
+    Task.findById(req.params.task_id, function(err, task){
+        if(err || !task){
+            res.status(404).json({message: "Task not found", data: []});
+        }else{
+            res.status(200).json({message: "OK", data: product});
+        }
     });
 });
 
@@ -287,15 +284,21 @@ taskRoute.put(function (req, res) {
 taskRoute.delete(function (req, res) {
     Task.findByIdAndRemove(req.params.task_id,
         function (err, task) {
-            if (err) {
-                if (err.kind == "ObjectId") {
-                    res.status(404).json({message: "Task not found", data: []});
-                }
-            } else if (!task) {
+            if(err || !task) {
                 res.status(404).json({message: "Task not found", data: []});
-            } else {
+            }else{
                 res.status(200).json({message: "Task deleted", data: task});
             }
+
+            //if (err) {
+            //    if (err.kind == "ObjectId") {
+            //        res.status(404).json({message: "Task not found", data: []});
+            //    }
+            //} else if (!task) {
+            //    res.status(404).json({message: "Task not found", data: []});
+            //} else {
+            //    res.status(200).json({message: "Task deleted", data: task});
+            //}
         });
 });
 
