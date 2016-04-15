@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="3728eb20-91c3-4af7-aaec-48acacad678e" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/server.js" afterPath="$PROJECT_DIR$/server.js" />
     </list>
     <ignored path="mp4_server.iws" />
@@ -29,8 +28,8 @@
           <file leaf-file-name="server.js" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/server.js">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="0.5380435">
-                  <caret line="153" column="60" selection-start-line="153" selection-start-column="60" selection-end-line="153" selection-end-column="60" />
+                <state vertical-scroll-proportion="-1.7119565">
+                  <caret line="40" column="16" selection-start-line="40" selection-start-column="16" selection-end-line="40" selection-end-column="16" />
                   <folding />
                 </state>
               </provider>
@@ -330,8 +329,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/server.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.5380435">
-          <caret line="153" column="60" selection-start-line="153" selection-start-column="60" selection-end-line="153" selection-end-column="60" />
+        <state vertical-scroll-proportion="-1.7119565">
+          <caret line="40" column="16" selection-start-line="40" selection-start-column="16" selection-end-line="40" selection-end-column="16" />
           <folding />
         </state>
       </provider>
