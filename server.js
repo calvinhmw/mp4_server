@@ -38,7 +38,7 @@ app.use(bodyParser.urlencoded({
     extended: true
 }));
 
-//app.use(bodyParser.json());
+app.use(bodyParser.json());
 
 
 // All our routes will start with /api
@@ -109,6 +109,7 @@ var parseTaskError = function (err) {
 };
 
 usersRoute.get(function (req, res) {
+    //console.log(req.query);
     var where = eval("(" + req.query.where + ")");
     var sort = eval("(" + req.query.sort + ")");
     var select = eval("(" + req.query.select + ")");
@@ -136,6 +137,7 @@ usersRoute.get(function (req, res) {
 });
 
 usersRoute.post(function (req, res) {
+    //console.log(req.body);
     var user = new User(req.body);
     user.save().then(function (product) {
         res.status(201).json({message: "User added", data: user});
