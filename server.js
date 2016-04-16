@@ -92,14 +92,14 @@ var parseTaskError = function (err) {
     var deadlineErr = "";
     var errorMsg = "";
     if (err.name == "ValidationError") {
-        if (err.errors.name) {
+        if (err.errors && err.errors.name) {
             if (err.errors.name.kind == "required") {
                 nameErr = " A name is required! ";
             } else {
                 nameErr = err.errors.name.message;
             }
         }
-        if (err.errors.deadline) {
+        if (err.errors && err.errors.deadline) {
             if (err.errors.deadline.kind == "required") {
                 deadlineErr = " A deadline is required! ";
             } else {
@@ -108,7 +108,7 @@ var parseTaskError = function (err) {
         }
         errorMsg = "Validation error: " + nameErr + deadlineErr;
     } else {
-        errorMsg = err.name;
+        errorMsg = err.name || "Unknown error";
     }
     return errorMsg;
 };
