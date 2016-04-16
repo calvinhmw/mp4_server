@@ -70,15 +70,19 @@ var taskRoute = router.route('/tasks/:task_id');
 var parseUserError = function (err) {
     var errorMsg;
     if (err.name == "ValidationError") {
-        if (err.errors.name && err.errors.email) {
+        if (err.errors && err.errors.name && err.errors.email) {
             errorMsg = "Validation Error: A name is required! An email is required! ";
-        } else if (err.errors.name) {
+        } else if (err.errors && err.errors.name) {
             errorMsg = "Validation Error: A name is required! ";
-        } else if (err.errors.email) {
+        } else if (err.errors && err.errors.email) {
             errorMsg = "Validation Error: An email is required! ";
+        } else{
+            errorMsg = "Validation Error: unknown error";
         }
     } else if (err.code == 11000) {
         errorMsg = "This email already exists";
+    } else{
+        errorMsg = "Unknown error";
     }
     return errorMsg;
 };
@@ -121,7 +125,7 @@ usersRoute.get(function (req, res) {
     if (count) {
         document.count(function (err, count) {
             if (err) {
-                res.status(500).json({message: err.errors, data: []});
+                res.status(500).json({message: err.name || err.message, data: []});
             } else {
                 res.status(200).json({message: "OK", data: count});
             }
@@ -129,7 +133,7 @@ usersRoute.get(function (req, res) {
     } else {
         document.sort(sort).skip(skip).limit(limit).select(select).exec(function (err, users) {
             if (err) {
-                res.status(500).json({message: err.errors, data: []});
+                res.status(500).json({message: err.name || err.message, data: []});
             } else {
                 res.status(200).json({message: "OK", data: users});
             }
@@ -165,12 +169,15 @@ userRoute.get(function (req, res) {
 
 userRoute.put(function (req, res) {
 
-    //var name = req.body.name;
-    //var email = req.body.email;
-    //var pendingTasks = req.body.pendingTasks;
-
+    var name = req.body.name;
+    var email = req.body.email;
+    var pendingTasks = req.body.pendingTasks;
     User.findByIdAndUpdate(req.params.user_id,
-        {$set: req.body},
+        {
+            name: name ? name : undefined,
+            email: email ? email : undefined,
+            pendingTasks: pendingTasks ? pendingTasks : []
+        },
         {new: true, runValidators: true},
         function (err, user) {
             if (err) {
@@ -210,7 +217,7 @@ tasksRoute.get(function (req, res) {
     if (count) {
         document.count(function (err, count) {
             if (err) {
-                res.status(500).json({message: err.errors, data: []});
+                res.status(500).json({message: err.name || err.message, data: []});
             } else {
                 res.status(200).json({message: "OK", data: count});
             }
@@ -218,7 +225,7 @@ tasksRoute.get(function (req, res) {
     } else {
         document.sort(sort).skip(skip).limit(limit).select(select).exec(function (err, tasks) {
             if (err) {
-                res.status(500).json({message: err.errors, data: []});
+                res.status(500).json({message: err.name || err.message, data: []});
             } else {
                 res.status(200).json({message: "OK", data: tasks});
             }
@@ -247,8 +254,16 @@ taskRoute.get(function (req, res) {
 });
 
 taskRoute.put(function (req, res) {
+    var task = {
+        name: req.body.name ? req.body.name : undefined,
+        description: req.body.description ? req.body.description : "",
+        deadline: req.body.deadline ? req.body.deadline : undefined,
+        completed: req.body.completed,
+        assignedUser: req.body.assignedUser ? req.body.assignedUser : "",
+        assignedUserName: req.body.assignedUserName ? req.body.assignedUserName : "unassigned"
+    };
     Task.findByIdAndUpdate(req.params.task_id,
-        {$set: req.body},
+        task,
         {new: true, runValidators: true},
         function (err, newTask) {
             if (err) {
